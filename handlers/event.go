@@ -79,7 +79,7 @@ func UpdateEvent(c *gin.Context) {
 	}
 
 	updatedEvent.ID = eventId
-	err = updatedEvent.UpdateEventById(uint64(eventId))
+	err = updatedEvent.UpdateEventById()
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "could not update event",
@@ -94,7 +94,28 @@ func UpdateEvent(c *gin.Context) {
 }
 
 func DelteEvent(c *gin.Context) {
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "Deleted event",
-	})
+	eventId, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "could not parse event id",
+		})
+		return
+	}
+	event, err := models.GetEventById(uint64(eventId))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "could not fetch event",
+		})
+		return
+	}
+
+	err = event.DeleteEventById()
+	if err != nil {
+		c.JSON(http.StatusInsufficientStorage, gin.H{
+			"message": "Could not delete event",
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Event deleted successfully!"})
+
 }
