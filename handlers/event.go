@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/vickyshaw29/events/models"
+	"github.com/vickyshaw29/events/utils"
 )
 
 func GetEvents(c *gin.Context) {
@@ -14,6 +15,7 @@ func GetEvents(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "could not fetch events try again later.",
 		})
+		return
 	}
 	c.JSON(http.StatusOK, events)
 }
@@ -37,8 +39,17 @@ func GetEventById(c *gin.Context) {
 }
 
 func CreateEvent(c *gin.Context) {
+	token := c.Request.Header.Get("Authorization")
+	if token == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+		return
+	}
+	err := utils.VerifyToken(token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+	}
 	event := models.Event{}
-	err := c.ShouldBindJSON(&event)
+	err = c.ShouldBindJSON(&event)
 	if err != nil {
 		c.JSON(http.StatusCreated, gin.H{
 			"message": "Could not parse request data",

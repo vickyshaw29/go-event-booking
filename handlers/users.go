@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/vickyshaw29/events/models"
+	"github.com/vickyshaw29/events/utils"
 )
 
 func Signup(c *gin.Context) {
@@ -25,7 +26,7 @@ func Signup(c *gin.Context) {
 }
 
 func Login(c *gin.Context) {
-	user := models.User{}
+	var user models.User
 	err := c.ShouldBindJSON(&user)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse user data"})
@@ -36,5 +37,9 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
 
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "User logged in successfully"})
+	token, err := utils.GenerateToken(user.Email, user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not authenticate user"})
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "User logged in successfully", "token": token})
 }

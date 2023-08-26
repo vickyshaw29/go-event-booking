@@ -8,9 +8,9 @@ import (
 )
 
 type User struct {
-	ID       int64  `binding:"required"`
-	email    string `binding:"required"`
-	password string `binding:"required"`
+	ID       int64
+	Email    string `binding:"required"`
+	Password string `binding:"required"`
 }
 
 func (u User) Create() error {
@@ -20,11 +20,11 @@ func (u User) Create() error {
 		return err
 	}
 	defer stmt.Close()
-	hashedPassword, err := utils.HashPassword(u.password)
+	hashedPassword, err := utils.HashPassword(u.Password)
 	if err != nil {
 		return err
 	}
-	result, err := stmt.Exec(u.email, hashedPassword)
+	result, err := stmt.Exec(u.Email, hashedPassword)
 	if err != nil {
 		return err
 	}
@@ -35,14 +35,14 @@ func (u User) Create() error {
 }
 
 func (u User) ValidateCredentials() error {
-	query := `SELECT password FROM users WHERE email = ?`
-	row := database.DB.QueryRow(query, u.email)
+	query := `SELECT id, password FROM users WHERE email = ?`
+	row := database.DB.QueryRow(query, u.Email)
 	var retrievedPassword string
-	err := row.Scan(&retrievedPassword)
+	err := row.Scan(&u.ID, &retrievedPassword)
 	if err != nil {
 		return errors.New("invalid credentials")
 	}
-	isValid := utils.CheckPasswordHash(u.password, retrievedPassword)
+	isValid := utils.CheckPasswordHash(u.Password, retrievedPassword)
 	if !isValid {
 		return errors.New("invalid credentials")
 	}
