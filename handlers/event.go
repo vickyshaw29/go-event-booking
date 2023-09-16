@@ -2,18 +2,99 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/vickyshaw29/events/models"
 )
 
-func GetAllEvents(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "List of events",
-	})
+func GetEvents(c *gin.Context) {
+	events, err := models.GetAllEvents()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "could not fetch events try again later.",
+		})
+	}
+	c.JSON(http.StatusOK, events)
+}
+
+func GetEventById(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "could not parse event id",
+		})
+		return
+	}
+	event, err := models.GetEventById(uint64(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "could not fetch event",
+		})
+		return
+	}
+	c.JSON(http.StatusCreated, event)
 }
 
 func CreateEvent(c *gin.Context) {
+	event := models.Event{}
+	err := c.ShouldBindJSON(&event)
+	if err != nil {
+		c.JSON(http.StatusCreated, gin.H{
+			"message": "Could not parse request data",
+		})
+	}
+	event.ID = 1
+	event.UserID = 1
+	err = event.CreateEvent()
+	if err != nil {
+		c.JSON(http.StatusCreated, gin.H{
+			"message": "Could not create event",
+		})
+	}
+	c.JSON(http.StatusCreated, event)
+}
+
+func UpdateEvent(c *gin.Context) {
+	eventId, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "could not parse event id",
+		})
+		return
+	}
+	_, err = models.GetEventById(uint64(eventId))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "could not fetch event",
+		})
+		return
+	}
+	updatedEvent := models.Event{}
+	err = c.ShouldBindJSON(&updatedEvent)
+	if err != nil {
+		c.JSON(http.StatusCreated, gin.H{
+			"message": "Could not parse request data",
+		})
+	}
+
+	updatedEvent.ID = eventId
+	err = updatedEvent.UpdateEventById(uint64(eventId))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": "could not update event",
+		})
+		return
+	}
+
+	c.JSON(http.StatusNotFound, gin.H{
+		"message": "Event updated successfully",
+	})
+
+}
+
+func DelteEvent(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Event created",
+		"message": "Deleted event",
 	})
 }

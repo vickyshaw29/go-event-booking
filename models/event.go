@@ -17,7 +17,7 @@ type Event struct {
 
 func (e *Event) CreateEvent() error {
 	query := `INSERT INTO events(name, description, location, dateTime, user_id)
-	VALUES(?,?,?,?)
+	VALUES(?,?,?,?,?)
 	`
 	stmt, err := database.DB.Prepare(query)
 	if err != nil {
@@ -32,6 +32,17 @@ func (e *Event) CreateEvent() error {
 	e.ID = id
 
 	return err
+}
+
+func GetEventById(id uint64) (*Event, error) {
+	query := "SELECT * FROM events WHERE id = ?"
+	row := database.DB.QueryRow(query, id)
+	event := Event{}
+	err := row.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.Datetime, &event.UserID)
+	if err != nil {
+		return nil, err
+	}
+	return &event, nil
 }
 
 func GetAllEvents() ([]Event, error) {
@@ -52,4 +63,20 @@ func GetAllEvents() ([]Event, error) {
 	}
 
 	return events, nil
+}
+
+func (e *Event) UpdateEventById(eventId uint64) error {
+	query := `UPDATE events SET name = ?, description = ?, location = ?, dateTime=?
+	WHERE id = ?
+	`
+
+	stmt, err := database.DB.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(&e.Name, &e.Description, e.Location, e.Datetime, e.ID)
+	return err
 }
